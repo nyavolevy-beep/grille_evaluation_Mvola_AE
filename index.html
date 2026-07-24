@@ -426,6 +426,8 @@ const DEFAULT_ACCOUNTS = [
 let ACCOUNTS = [];
 let accountsReady = null;
 
+  const API_URL = "https://script.google.com/macros/s/AKfycbzn4OBuUgvqoKSwz9zvbBWsKQn9fmGTqbTWAgcDIDoaIjQz3SLfKDmbVYXUGINvPZtFgw/exec";
+  
 async function loadAccounts(){
   let stored = await safeGet('accounts', true);
   if (!stored || !Array.isArray(stored) || !stored.length){
