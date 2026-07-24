@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-const API_URL ="https://script.google.com/macros/s/AKfycbyjxDuYhliGoNKu-rc8FKsMuB8ISH5D1X1rU_Cd9TI09W5eBLRKOX4lQThmcrNdaQuFAA/exec";
+const API_URL ="https://script.google.com/macros/s/AKfycbwYOAw0ndYVBPUvQ5nkPlxvM4R18xTd6cia57V2KZaPHURvew7B6mcRrs_8RdBvUKL4CA/exec";
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -607,7 +607,7 @@ function hasCloudStorage(){
   return typeof window !== 'undefined' && !!window.storage && typeof window.storage.get === 'function';
 }
 function lsKey(key, shared){ return `geq_${shared ? 'shared' : 'personal'}_${key}`; }
-const API_URL = "https://script.google.com/macros/s/AKfycbyjxDuYhliGoNKu-rc8FKsMuB8ISH5D1X1rU_Cd9TI09W5eBLRKOX4lQThmcrNdaQuFAA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwYOAw0ndYVBPUvQ5nkPlxvM4R18xTd6cia57V2KZaPHURvew7B6mcRrs_8RdBvUKL4CA/exec";
 async function safeGet(key) {
 const response = await fetch(`${API_URL}?key=${encodeURIComponent(key)}`);
 return await response.json();
