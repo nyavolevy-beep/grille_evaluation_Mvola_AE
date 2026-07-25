@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grille d'Évaluation Qualité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #eef1f0;
+    --surface: #ffffff;
+    --ink: #1f2a2b;
+    --ink-soft: #5b6b6c;
+    --line: #dbe2e0;
+    --primary: #2f5d55;
+    --primary-dark: #1f403a;
+    --conforme: #2f8f5e;
+    --conforme-bg: #e6f4ec;
+    --nonconforme: #b3423a;
+    --nonconforme-bg: #f8e9e7;
+    --na: #7c868a;
+    --na-bg: #eceeef;
+    --si: #a3391f;
+    --si-bg: #fbe6df;
+    --radius: 10px;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0; background: var(--bg); color: var(--ink);
+    font-family: 'Inter', sans-serif; padding: 32px 20px 80px;
+  }
+  .wrap{ max-width: 1040px; margin: 0 auto; }
+
+  header.top{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+    margin-bottom: 28px; flex-wrap: wrap;
+  }
+  header.top .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color: var(--primary); margin:0 0 6px;
+  }
+  header.top h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:32px; margin:0; color: var(--primary-dark);
+    letter-spacing:-0.01em;
+  }
+  header.top p{ margin:6px 0 0; color: var(--ink-soft); font-size:14.5px; max-width:520px; }
+  .top-actions{ display:flex; gap:10px; align-items:center; }
+  .session-info{ font-size:12.5px; color: var(--ink-soft); margin-right:4px; }
+  .session-info b{ color: var(--primary-dark); }
+
+  /* ---- Login ---- */
+  #loginOverlay{
+    position:fixed; inset:0; background: var(--primary-dark); display:flex;
+    align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .login-card{
+    background:#fff; border-radius: var(--radius); padding:34px 32px; width:100%; max-width:360px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  }
+  .login-card .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color: var(--primary); margin:0 0 6px;
+  }
+  .login-card h1{ font-family:'Fraunces', serif; font-size:24px; margin:0 0 20px; color:var(--primary-dark); }
+  .login-card .field{ margin-bottom:14px; }
+  .login-card button{ width:100%; margin-top:6px; }
+  .login-error{ color: var(--nonconforme); font-size:12.5px; margin-top:10px; min-height:16px; }
+
+  .card{ background: var(--surface); border:1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; }
+
+  .meta-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:18px; margin-bottom: 24px; }
+  @media (max-width: 900px){ .meta-grid{ grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px){ .meta-grid{ grid-template-columns: 1fr; } }
+  .field label{
+    display:block; font-size:12px; font-weight:600; color: var(--primary-dark);
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:7px;
+  }
+  .field input, .field select{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px;
+    font-family:'Inter',sans-serif; font-size:14px; color:var(--ink); background:#fcfdfd;
+  }
+  .field input:focus, .field select:focus{ outline:2px solid var(--primary); outline-offset:1px; }
+
+  .main-grid{ display:grid; grid-template-columns: 1fr 270px; gap:20px; align-items:start; }
+  @media (max-width: 820px){ .main-grid{ grid-template-columns: 1fr; } }
+
+  .criteria-list{ display:flex; flex-direction:column; gap:14px; }
+  .crit-card{ background:var(--surface); border:1px solid var(--line); border-radius: var(--radius); padding:16px 18px; }
+  .crit-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .crit-num{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color: var(--primary);
+    background: var(--conforme-bg); border-radius:5px; padding:2px 7px; flex-shrink:0;
+  }
+  .crit-card h3{ font-family:'Fraunces', serif; font-size:17px; font-weight:600; margin:0; color:var(--ink); flex:1; }
+  .crit-points{ font-family:'IBM Plex Mono', monospace; font-size:12px; color: var(--ink-soft); flex-shrink:0; }
+  .crit-card p{ font-size:13px; color:var(--ink-soft); line-height:1.5; margin:0 0 12px; }
+
+  .status-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .status-row input{ position:absolute; opacity:0; width:0; height:0; }
+  .status-row label{
+    cursor:pointer; font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:20px;
+    border:1.5px solid var(--line); color:var(--ink-soft); background:#fff; transition:.12s ease;
+    user-select:none;
+  }
+  .status-row label:hover{ border-color: var(--primary); }
+  input:checked + label.opt-conforme{ background:var(--conforme-bg); border-color:var(--conforme); color:var(--conforme); }
+  input:checked + label.opt-nonconforme{ background:var(--nonconforme-bg); border-color:var(--nonconforme); color:var(--nonconforme); }
+  input:checked + label.opt-na{ background:var(--na-bg); border-color:var(--na); color:var(--na); }
+  input:checked + label.opt-si{ background:var(--si-bg); border-color:var(--si); color:var(--si); }
+
+  .score-panel{
+    position: sticky; top:20px; background:var(--primary-dark); color:#fff; border-radius: var(--radius);
+    padding:22px 20px; text-align:center;
+  }
+  .score-panel .label{ font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; opacity:.7; }
+  .gauge-wrap{ margin: 14px auto; width:150px; }
+  .gauge-sub{ font-size:12px; opacity:.75; margin-top:2px; }
+  .points-line{ font-family:'IBM Plex Mono', monospace; font-size:13px; margin-top:6px; opacity:.9; }
+  .penalty-flag{
+    margin-top:12px; background: rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+    border-radius:7px; padding:8px 10px; font-size:12px; line-height:1.4;
+  }
+  .legend{ text-align:left; margin-top:18px; font-size:12px; display:flex; flex-direction:column; gap:6px; opacity:.9;}
+  .legend div{ display:flex; justify-content:space-between; }
+
+  .actions{ display:flex; gap:10px; margin-top:22px; flex-wrap:wrap; align-items:center; }
+  button{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:14px; padding:11px 20px;
+    border-radius:8px; border:1.5px solid var(--primary); cursor:pointer; transition:.12s ease;
+  }
+  .btn-primary{ background: var(--primary); color:#fff; }
+  .btn-primary:hover{ background: var(--primary-dark); }
+  .btn-ghost{ background:#fff; color: var(--primary); }
+  .btn-ghost:hover{ background: var(--conforme-bg); }
+  .btn-danger{ background:#fff; color:var(--nonconforme); border-color:var(--nonconforme); }
+  .btn-danger:hover{ background: var(--nonconforme-bg); }
+  .btn-small{ padding:6px 12px; font-size:12px; border-radius:6px; }
+  .save-status{ font-size:12.5px; color: var(--primary); margin-left:4px; }
+  .edit-banner{
+    display:none; background: var(--si-bg); border:1px solid var(--si); color:#7a2a15;
+    border-radius:8px; padding:10px 14px; font-size:13px; margin-bottom:18px; align-items:center; justify-content:space-between; gap:10px;
+  }
+
+  /* ---- Dashboard ---- */
+  #dashboardView{ display:none; }
+  #accountsView{ display:none; }
+  #listsView{ display:none; }
+  .acc-role-badge{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.04em; }
+  .acc-role-admin{ color:var(--primary); background:var(--conforme-bg); }
+  .acc-role-user{ color:var(--ink-soft); background:var(--na-bg); }
+  .stat-grid{ display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:26px; }
+  @media (max-width: 760px){ .stat-grid{ grid-template-columns: 1fr 1fr; } }
+  .stat-card{ background:var(--surface); border:1px solid var(--line); border-radius: var(--radius); padding:18px; }
+  .stat-card .stat-label{ font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
+  .stat-card .stat-value{ font-family:'Fraunces', serif; font-size:28px; font-weight:600; color:var(--primary-dark); margin-top:6px; }
+
+  .dash-controls{ display:flex; justify-content:space-between; align-items:center; margin: 30px 0 12px; flex-wrap:wrap; gap:10px; }
+  .dash-controls h2{ font-family:'Fraunces', serif; font-size:20px; color:var(--primary-dark); margin:0; }
+  .dash-controls select{ padding:8px 10px; border-radius:7px; border:1px solid var(--line); font-size:13.5px; }
+
+  .agent-card{ background:var(--surface); border:1px solid var(--line); border-radius: var(--radius); padding:18px 20px; margin-bottom:14px; }
+  .agent-card-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .agent-card-head h3{ font-family:'Fraunces', serif; font-size:18px; margin:0; color:var(--ink); }
+  .agent-meta{ font-size:12.5px; color:var(--ink-soft); }
+  .agent-score{ font-family:'IBM Plex Mono', monospace; font-weight:600; padding:4px 10px; border-radius:20px; font-size:13px; }
+  .noncomp-list{ display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 0; }
+  .noncomp-tag{ font-size:12px; background:var(--nonconforme-bg); color:var(--nonconforme); padding:4px 10px; border-radius:20px; }
+
+  table{ width:100%; border-collapse: collapse; font-size:13.5px; margin-top:10px; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);
+      border-bottom:1.5px solid var(--line); padding:8px 10px; }
+  td{ padding:10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  .pill-score{ font-family:'IBM Plex Mono', monospace; font-weight:500; padding:3px 9px; border-radius:20px; font-size:12.5px; }
+  .row-actions{ display:flex; gap:6px; }
+  .empty-state{ color: var(--ink-soft); font-size:13.5px; padding: 20px 0; text-align:center; }
+
+  @media print{
+    body{ background:#fff; padding:0; }
+    .top-actions, .actions, .btn-danger, #dashboardView, #loginOverlay{ display:none !important; }
+    .score-panel{ position:static; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div class="login-card">
+    <p class="eyebrow">Accès sécurisé</p>
+    <h1>Grille d'Évaluation Qualité</h1>
+    <div class="field">
+      <label for="loginInput">Identifiant</label>
+      <input id="loginInput" placeholder="ex : admin">
+    </div>
+    <div class="field">
+      <label for="passwordInput">Mot de passe</label>
+      <input id="passwordInput" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn-primary" id="loginBtn">Se connecter</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none;">
+
+  <header class="top">
+    <div>
+      <p class="eyebrow">Outil de suivi qualité</p>
+      <h1>Grille d'Évaluation Qualité</h1>
+      <p>Évaluez chaque critère, suivez la note qualité pondérée et consultez le tableau de bord global et par agent.</p>
+    </div>
+    <div class="top-actions">
+      <span class="session-info" id="sessionInfo"></span>
+      <button class="btn-ghost" id="dashboardBtn" style="display:none;">📊 Tableau de bord</button>
+      <button class="btn-ghost" id="listsBtn" style="display:none;">🗂 Gérer les listes</button>
+      <button class="btn-ghost" id="accountsBtn" style="display:none;">👤 Gérer les comptes</button>
+      <button class="btn-ghost" id="logoutBtn">Se déconnecter</button>
+    </div>
+  </header>
+
+  <!-- ===================== FORM VIEW ===================== -->
+  <div id="formView">
+
+    <div class="edit-banner" id="editBanner">
+      <span id="editBannerText">Modification d'une évaluation existante.</span>
+      <button class="btn-ghost btn-small" id="cancelEditBtn">Annuler la modification</button>
+    </div>
+
+    <div class="card meta-grid">
+      <div class="field">
+        <label for="agentInput">Nom de l'agent</label>
+        <input id="agentInput" list="agentsList" placeholder="Saisir ou choisir un agent">
+        <datalist id="agentsList"></datalist>
+      </div>
+      <div class="field">
+        <label for="evaluateurInput">Évaluateur</label>
+        <input id="evaluateurInput" list="evaluateursList" placeholder="Saisir ou choisir un évaluateur">
+        <datalist id="evaluateursList"></datalist>
+      </div>
+      <div class="field">
+        <label for="dateInput">Date d'évaluation</label>
+        <input id="dateInput" type="date">
+      </div>
+      <div class="field">
+        <label for="dateAppelInput">Date d'appel</label>
+        <input id="dateAppelInput" type="date">
+      </div>
+      <div class="field">
+        <label for="indiceInput">Indice d'évaluation</label>
+        <input id="indiceInput" placeholder="Ex : Q3-2026 / réf. dossier">
+      </div>
+      <div class="field">
+        <label for="ecouteSelect">Type d'écoute</label>
+        <select id="ecouteSelect">
+          <option value="A chaud">À chaud</option>
+          <option value="A froid">À froid</option>
+          <option value="Calibrage">Calibrage</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fileSelect">File évaluée</label>
+        <select id="fileSelect">
+          <option value="803">803</option>
+          <option value="804">804</option>
+          <option value="807">807</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="demandeInput">Demande client</label>
+        <input id="demandeInput" list="demandesList" placeholder="Saisir ou choisir une demande">
+        <datalist id="demandesList"></datalist>
+      </div>
+      <div class="field">
+        <label for="typologieInput">Typologie d'appel</label>
+        <input id="typologieInput" list="typologiesList" placeholder="Saisir ou choisir une typologie">
+        <datalist id="typologiesList"></datalist>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="criteria-list" id="criteriaList"></div>
+
+      <div class="score-panel">
+        <div class="label">Note qualité</div>
+        <div class="gauge-wrap" id="gaugeWrap"></div>
+        <div class="gauge-sub" id="gaugeSub">0 / 0 critères évalués</div>
+        <div class="points-line" id="pointsLine">0 / 100 pts</div>
+        <div class="penalty-flag" id="penaltyFlag" style="display:none;">
+          ⚠ Situation inacceptable détectée — pénalité de 50 % appliquée à la note.
+        </div>
+        <div class="legend" id="legendCounts">
+          <div><span>Conforme</span><span id="cntConforme">0</span></div>
+          <div><span>Non conforme</span><span id="cntNonConforme">0</span></div>
+          <div><span>N/A</span><span id="cntNA">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="field" style="max-width:320px;">
+        <label for="siSelect">Situation inacceptable (SI)</label>
+        <select id="siSelect">
+          <option value="non">Non</option>
+          <option value="oui">Oui</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="saveBtn">Enregistrer l'évaluation</button>
+      <button class="btn-ghost" id="resetBtn">Réinitialiser le formulaire</button>
+      <span class="save-status" id="saveStatus"></span>
+    </div>
+  </div>
+
+  <!-- ===================== DASHBOARD VIEW ===================== -->
+  <div id="dashboardView">
+    <div class="top-actions" style="margin-bottom:18px; justify-content:space-between;">
+      <button class="btn-ghost" id="backToFormBtn">← Retour à l'évaluation</button>
+      <button class="btn-primary" id="exportCsvBtn">⬇ Exporter les évaluations en CSV</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Note qualité globale</div>
+        <div class="stat-value" id="globalScore">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Évaluations (global)</div>
+        <div class="stat-value" id="globalCount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Agents évalués</div>
+        <div class="stat-value" id="globalAgents">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Situations inacceptables</div>
+        <div class="stat-value" id="globalSI">0</div>
+      </div>
+    </div>
+
+    <div class="dash-controls">
+      <h2>Note qualité par agent</h2>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <div class="field" style="margin:0;">
+          <label for="dateStartFilter" style="margin-bottom:4px;">Du</label>
+          <input type="date" id="dateStartFilter">
+        </div>
+        <div class="field" style="margin:0;">
+          <label for="dateEndFilter" style="margin-bottom:4px;">Au</label>
+          <input type="date" id="dateEndFilter">
+        </div>
+        <button class="btn-ghost btn-small" id="clearDateFilterBtn" style="margin-top:18px;">Effacer les dates</button>
+        <select id="agentFilter" style="margin-top:18px;"><option value="">Tous les agents</option></select>
+      </div>
+    </div>
+    <div id="agentCards"></div>
+
+    <div class="dash-controls">
+      <h2>Évaluations enregistrées</h2>
+    </div>
+    <div id="historyContainer"><div class="empty-state">Aucune évaluation enregistrée pour le moment.</div></div>
+  </div>
+
+  <!-- ===================== ACCOUNTS VIEW (admin) ===================== -->
+  <div id="accountsView">
+    <div class="top-actions" style="margin-bottom:18px; justify-content:space-between;">
+      <button class="btn-ghost" id="backToFormFromAccountsBtn">← Retour à l'évaluation</button>
+    </div>
+
+    <div class="card" style="margin-bottom:22px;">
+      <h2 style="font-family:'Fraunces',serif; font-size:19px; color:var(--primary-dark); margin:0 0 16px;">Ajouter un compte</h2>
+      <div class="meta-grid" style="margin-bottom:14px;">
+        <div class="field">
+          <label for="newAccLogin">Identifiant</label>
+          <input id="newAccLogin" placeholder="ex : Prenom">
+        </div>
+        <div class="field">
+          <label for="newAccName">Nom affiché</label>
+          <input id="newAccName" placeholder="ex : Prenom Nom">
+        </div>
+        <div class="field">
+          <label for="newAccPassword">Mot de passe</label>
+          <input id="newAccPassword" placeholder="Laisser vide pour générer">
+        </div>
+        <div class="field">
+          <label for="newAccRole">Rôle</label>
+          <select id="newAccRole">
+            <option value="user">Utilisateur</option>
+            <option value="admin">Administrateur</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:0;">
+        <button class="btn-primary" id="addAccountBtn">Créer le compte</button>
+        <span class="save-status" id="accountStatus"></span>
+      </div>
+    </div>
+
+    <div class="dash-controls">
+      <h2>Comptes existants</h2>
+    </div>
+    <div id="accountsContainer"></div>
+  </div>
+
+  <!-- ===================== LISTS VIEW (admin) ===================== -->
+  <div id="listsView">
+    <div class="top-actions" style="margin-bottom:18px; justify-content:space-between;">
+      <button class="btn-ghost" id="backToFormFromListsBtn">← Retour à l'évaluation</button>
+    </div>
+    <div id="listsContainer"></div>
+  </div>
+
+</div>
+
+<script>
+// ===================== Comptes =====================
+// Accès simple par identifiant / mot de passe (contrôle d'accès basique).
+// Les comptes sont stockés dans le storage partagé afin que l'admin puisse les gérer
+// depuis l'interface (créer / modifier / supprimer), pour tous les utilisateurs de l'outil.
+const DEFAULT_ACCOUNTS = [
+  { login: "admin", password: "Qualite@2026", role: "admin", name: "Administrateur" },
+  { login: "Tahina", password: "zLkcpNmsLG", role: "user", name: "Tahina" },
+  { login: "Tahiry", password: "WiIBpGI78o", role: "user", name: "Tahiry" },
+  { login: "Martinah", password: "kc88Llkq2N", role: "user", name: "Martinah" },
+  { login: "Hasina", password: "10uKHwVfXB", role: "user", name: "Hasina" },
+  { login: "Ravaka", password: "cMNj18iR7r", role: "user", name: "Ravaka" },
+  { login: "Rita", password: "eFhsHiPxsA", role: "user", name: "Rita" },
+  { login: "Katie", password: "OeUNYw9n9x", role: "user", name: "Katie" },
+  { login: "Voahanginiaina", password: "TXAlMXQBhh", role: "user", name: "Voahanginiaina" },
+  { login: "Iary", password: "epKOgcHajm", role: "user", name: "Iary" }
+];
+let ACCOUNTS = [];
+let accountsReady = null;
+
+async function loadAccounts(){
+  let stored = await safeGet('accounts', true);
+  if (!stored || !Array.isArray(stored) || !stored.length){
+    stored = DEFAULT_ACCOUNTS;
+    await safeSet('accounts', stored, true);
+  }
+  ACCOUNTS = stored;
+  return ACCOUNTS;
+}
+async function ensureAccountsLoaded(){
+  if (!accountsReady) accountsReady = loadAccounts();
+  return accountsReady;
+}
+async function saveAccounts(){
+  await safeSet('accounts', ACCOUNTS, true);
+}
+
+let currentUser = null;
+
+// ---- Session : stockée localement au navigateur (jamais dans le backend partagé) ----
+// Important : la session ne doit JAMAIS transiter par le Google Sheet partagé, sinon
+// tous les utilisateurs de l'outil se retrouveraient à partager la même session de
+// connexion (le dernier connecté "écraserait" la session de tout le monde).
+const SESSION_KEY = 'geq_session';
+function saveLocalSession(login){
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ login })); } catch (err) {}
+}
+function readLocalSession(){
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) { return null; }
+}
+function clearLocalSession(){
+  try { localStorage.removeItem(SESSION_KEY); } catch (err) {}
+}
+
+function applyRoleUI(){
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  document.getElementById('dashboardBtn').style.display = currentUser ? 'inline-block' : 'none';
+  document.getElementById('accountsBtn').style.display = isAdmin ? 'inline-block' : 'none';
+  document.getElementById('listsBtn').style.display = isAdmin ? 'inline-block' : 'none';
+  document.getElementById('sessionInfo').innerHTML = currentUser ? `Connecté : <b>${currentUser.name}</b> (${currentUser.role})` : '';
+  showView('form');
+}
+
+async function attemptLogin(){
+  await ensureAccountsLoaded();
+  const login = document.getElementById('loginInput').value.trim();
+  const pwd = document.getElementById('passwordInput').value;
+  const errEl = document.getElementById('loginError');
+  const acc = ACCOUNTS.find(a => a.login.toLowerCase() === login.toLowerCase() && a.password === pwd);
+  if (!acc){
+    errEl.textContent = "Identifiant ou mot de passe incorrect.";
+    return;
+  }
+  currentUser = acc;
+  saveLocalSession(acc.login);
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appWrap').style.display = 'block';
+  applyRoleUI();
+}
+
+document.getElementById('loginBtn').addEventListener('click', attemptLogin);
+document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  currentUser = null;
+  clearLocalSession();
+  document.getElementById('appWrap').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('loginInput').value = '';
+  document.getElementById('passwordInput').value = '';
+  document.getElementById('loginError').textContent = '';
+});
+
+async function restoreSession(){
+  await ensureAccountsLoaded();
+  const sess = readLocalSession();
+  if (sess){
+    const acc = ACCOUNTS.find(a => a.login === sess.login);
+    if (acc){
+      currentUser = acc;
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('appWrap').style.display = 'block';
+      applyRoleUI();
+      return;
+    }
+  }
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('appWrap').style.display = 'none';
+}
+
+const CRITERIA = [
+  { id: "accueil", titre: "Accueil", detail: "Vérifier que le conseiller crée un climat de confiance dès les premiers instants : salutation systématique, ton professionnel, remerciement pour la prise de contact, démonstration de disponibilité et prise en charge de la demande." },
+  { id: "ecoute", titre: "Écoute", detail: "Vérifier la capacité du conseiller à adapter sa réponse au contexte spécifique du client : reformulation de la demande, prise en compte de la situation décrite, mention des éléments du parcours client et utilisation d'éléments permettant de montrer que la réponse n'est pas standardisée." },
+  { id: "comprehension", titre: "Compréhension du vécu client", detail: "Vérifier que le conseiller identifie l'émotion exprimée ou sous-jacente, reconnaît le ressenti du client, adapte son discours à la situation et traite l'émotion avant de passer à la solution lorsque nécessaire." },
+  { id: "emotion", titre: "Reconnaissance de l'émotion", detail: "Évaluer la capacité du conseiller à expliquer simplement une information, décomposer les étapes, vulgariser les procédures, éviter les termes techniques incompris et s'assurer que le client dispose de toutes les informations nécessaires pour agir." },
+  { id: "pedagogie", titre: "Pédagogie", detail: "Vérifier la capacité du conseiller à instaurer un dialogue humain : écoute active, intérêt porté au client, posture d'accompagnement, démarche collaborative (« voyons ensemble »), et non simple application de procédure." },
+  { id: "personnalisation", titre: "Personnalisation", detail: "Observer la manière dont le conseiller gère les critiques, réclamations, demandes de responsable, clients mécontents ou agressifs : maintien du calme, reconnaissance des attentes, recherche de solutions, préservation du respect mutuel et de la relation client." },
+  { id: "tensions", titre: "Gestion des tensions", detail: "Identifier dans les verbatims clients les éléments relatifs à l'accueil, l'écoute, la compréhension, l'accompagnement, la clarté des réponses, le professionnalisme et la qualité de la relation créée par le conseiller." },
+  { id: "cloture", titre: "Clôture", detail: "Vérifier que le participant est capable d'expliquer les concepts de la formation, de citer les piliers de la relation client, de reconnaître une émotion client, de proposer une réponse personnalisée et de donner un exemple concret d'application sur le terrain." },
+  { id: "pertinence", titre: "Pertinence de la réponse / Amabilité / Sourire / Humanité & Bienveillance", detail: "Je donne une solution correcte, complète et précise / Je reste aimable, dynamique et positif / Je reconnais la situation du client avec considération." }
+];
+// Poids répartis pour totaliser 100 points si tout est conforme
+const RAW_WEIGHT = 100 / CRITERIA.length;
+CRITERIA.forEach(c => c.points = RAW_WEIGHT);
+
+const STATUS_OPTS = [
+  { key: "conforme", label: "Conforme", cls: "opt-conforme" },
+  { key: "nonconforme", label: "Non conforme", cls: "opt-nonconforme" },
+  { key: "na", label: "N/A", cls: "opt-na" }
+];
+
+let editingId = null;
+
+const listEl = document.getElementById('criteriaList');
+function renderCriteriaCards(){
+  listEl.innerHTML = '';
+  CRITERIA.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'crit-card';
+    card.innerHTML = `
+      <div class="crit-head">
+        <span class="crit-num">${String(i+1).padStart(2,'0')}</span>
+        <h3>${c.titre}</h3>
+        <span class="crit-points">${c.points.toFixed(2)} pts</span>
+      </div>
+      <p>${c.detail}</p>
+      <div class="status-row">
+        ${STATUS_OPTS.map(o => `
+          <input type="radio" name="${c.id}" id="${c.id}-${o.key}" value="${o.key}">
+          <label class="${o.cls}" for="${c.id}-${o.key}">${o.label}</label>
+        `).join('')}
+      </div>
+    `;
+    listEl.appendChild(card);
+  });
+}
+renderCriteriaCards();
+document.getElementById('dateInput').valueAsDate = new Date();
+document.getElementById('dateAppelInput').valueAsDate = new Date();
+
+function drawGauge(pct){
+  const wrap = document.getElementById('gaugeWrap');
+  const hasScore = pct !== null;
+  const value = hasScore ? Math.round(pct) : 0;
+  const r = 62, c = 2*Math.PI*r;
+  const offset = c - (value/100)*c;
+  const color = !hasScore ? '#5b7d76' : value >= 80 ? '#5fd6a0' : value >= 50 ? '#f2c14e' : '#e8837a';
+  wrap.innerHTML = `
+    <svg viewBox="0 0 150 150" width="150" height="150">
+      <circle cx="75" cy="75" r="${r}" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="12"/>
+      <circle cx="75" cy="75" r="${r}" fill="none" stroke="${color}" stroke-width="12"
+        stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+        transform="rotate(-90 75 75)" style="transition: stroke-dashoffset .3s ease"/>
+      <text x="75" y="82" text-anchor="middle" font-family="Fraunces, serif" font-size="30" font-weight="600" fill="#fff">${hasScore ? value + '%' : '—'}</text>
+    </svg>`;
+}
+
+// Calcule le score en tenant compte des points et de la pénalité "Situation inacceptable"
+function computeScore(){
+  const counts = { conforme:0, nonconforme:0, na:0 };
+  let earned = 0, possible = 0;
+  CRITERIA.forEach(c => {
+    const checked = document.querySelector(`input[name="${c.id}"]:checked`);
+    if (!checked) return;
+    const val = checked.value;
+    counts[val]++;
+    if (val === 'na') return; // exclu du calcul
+    possible += c.points;
+    if (val === 'conforme') earned += c.points;
+    // 'nonconforme' rapporte 0 point sur l'item
+  });
+  const basePct = possible > 0 ? (earned/possible)*100 : null;
+  const siSelect = document.getElementById('siSelect');
+  const hasSI = siSelect ? siSelect.value === 'oui' : false;
+  const finalPct = (basePct !== null && hasSI) ? basePct * 0.5 : basePct;
+
+  document.getElementById('cntConforme').textContent = counts.conforme;
+  document.getElementById('cntNonConforme').textContent = counts.nonconforme;
+  document.getElementById('cntNA').textContent = counts.na;
+  document.getElementById('gaugeSub').textContent = `${counts.conforme+counts.nonconforme+counts.na} / ${CRITERIA.length} critères évalués`;
+  document.getElementById('pointsLine').textContent = `${earned.toFixed(1)} / ${possible.toFixed(1)} pts (avant pénalité)`;
+  document.getElementById('penaltyFlag').style.display = hasSI ? 'block' : 'none';
+  drawGauge(finalPct);
+  return { counts, earned, possible, basePct, finalPct, hasSI };
+}
+listEl.addEventListener('change', computeScore);
+document.getElementById('siSelect').addEventListener('change', computeScore);
+computeScore();
+
+// ---- Persistence ----
+// Toutes les requêtes vers le backend Apps Script (GET pour lire, POST pour écrire/supprimer).
+// Le Content-Type "text/plain" est utilisé volontairement sur les POST pour éviter que le
+// navigateur déclenche une requête preflight OPTIONS (CORS) que Apps Script ne gère pas
+// nativement — Apps Script lit e.postData.contents de la même façon quel que soit le
+// Content-Type déclaré, donc cela ne change rien côté serveur.
+const API_URL =
+"https://script.google.com/macros/s/AKfycbxb--b5F7efYYt9FxheDanlqMeIGeyz_wyX1voqLKGkkua3tKIofTIEq6NSaYsNPn1D8A/exec";
+
+async function safeGet(key) {
+  try {
+    const response = await fetch(`${API_URL}?key=${encodeURIComponent(key)}`);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (err) {
+    console.error('safeGet error:', err);
+    return null;
+  }
+}
+async function safeSet(key, value) {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "save", key: key, value: value })
+    });
+    return await response.json();
+  } catch (err) {
+    console.error('safeSet error:', err);
+    return null;
+  }
+}
+async function safeDelete(key) {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "delete", key: key })
+    });
+    return await response.json();
+  } catch (err) {
+    console.error('safeDelete error:', err);
+    return null;
+  }
+}
+async function saveEvaluationRemote(record) {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "saveEvaluation", evaluation: record })
+    });
+    return await response.json();
+  } catch (err) {
+    console.error('saveEvaluationRemote error:', err);
+    return null;
+  }
+}
+
+// ---- Listes déroulantes synchronisées avec l'onglet "Listes" du Google Sheet ----
+// Catégories gérées côté script : agent, evaluateur, demande, typologie.
+async function apiGetLists(){
+  try {
+    const response = await fetch(`${API_URL}?action=getLists`);
+    if (!response.ok) return {};
+    return await response.json();
+  } catch (err) {
+    console.error('apiGetLists error:', err);
+    return {};
+  }
+}
+async function apiAddListValue(categorie, valeur){
+  if (!categorie || !valeur) return null;
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "addListValue", categorie, valeur })
+    });
+    return await response.json();
+  } catch (err) {
+    console.error('apiAddListValue error:', err);
+    return null;
+  }
+}
+
+async function apiRenameListValue(categorie, ancienneValeur, nouvelleValeur){
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "renameListValue", categorie, ancienneValeur, nouvelleValeur })
+    });
+    return await response.json();
+  } catch (err) {
+    console.error('apiRenameListValue error:', err);
+    return null;
+  }
+}
+async function apiDeleteListValue(categorie, valeur){
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "deleteListValue", categorie, valeur })
+    });
+    return await response.json();
+  } catch (err) {
+    console.error('apiDeleteListValue error:', err);
+    return null;
+  }
+}
+
+async function refreshAllLists(){
+  const lists = await apiGetLists();
+  const agents = lists.agent || [];
+  const evaluateurs = lists.evaluateur || [];
+  const demandes = lists.demande || [];
+  const typologies = lists.typologie || [];
+  document.getElementById('agentsList').innerHTML = agents.map(a => `<option value="${a}"></option>`).join('');
+  document.getElementById('evaluateursList').innerHTML = evaluateurs.map(a => `<option value="${a}"></option>`).join('');
+  document.getElementById('demandesList').innerHTML = demandes.map(a => `<option value="${a}"></option>`).join('');
+  document.getElementById('typologiesList').innerHTML = typologies.map(a => `<option value="${a}"></option>`).join('');
+}
+
+async function getAllEvaluations(){
+  const index = (await safeGet('evaluations_index', true)) || [];
+  const full = await Promise.all(index.map(async row => {
+    const rec = await safeGet('eval:' + row.id, true);
+    return rec || row;
+  }));
+  return full.filter(Boolean).sort((a,b) => b.savedAt - a.savedAt);
+}
+
+function scoreColor(pct){
+  if (pct === null || pct === undefined) return { color:'var(--na)', bg:'var(--na-bg)' };
+  if (pct >= 80) return { color:'var(--conforme)', bg:'var(--conforme-bg)' };
+  if (pct >= 50) return { color:'#b5860b', bg:'#fbf1da' };
+  return { color:'var(--nonconforme)', bg:'var(--nonconforme-bg)' };
+}
+
+function renderHistoryTable(evals){
+  const container = document.getElementById('historyContainer');
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  if (!evals.length){
+    container.innerHTML = '<div class="empty-state">Aucune évaluation enregistrée pour le moment.</div>';
+    return;
+  }
+  container.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Date d'appel</th><th>Agent</th><th>Évaluateur</th><th>File</th><th>Type d'écoute</th><th>Typologie</th><th>Indice</th><th>Note</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${evals.map(row => {
+          const pct = row.finalPct !== undefined ? row.finalPct : row.pct;
+          const label = (pct === null || pct === undefined) ? '—' : Math.round(pct) + '%';
+          const sc = scoreColor(pct);
+          return `<tr>
+            <td>${row.date || '—'}</td>
+            <td>${row.dateAppel || '—'}</td>
+            <td>${row.agent || '—'}</td>
+            <td>${row.evaluateur || '—'}</td>
+            <td>${row.file || '—'}</td>
+            <td>${row.ecoute || '—'}</td>
+            <td>${row.typologie || '—'}</td>
+            <td>${row.indice || '—'}</td>
+            <td><span class="pill-score" style="color:${sc.color}; background:${sc.bg}">${label}</span></td>
+            <td class="row-actions">
+              ${isAdmin ? `<button class="btn-ghost btn-small" data-edit="${row.id}">Modifier</button>` : ''}
+              ${isAdmin ? `<button class="btn-danger btn-small" data-del="${row.id}">Supprimer</button>` : ''}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  container.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!currentUser || currentUser.role !== 'admin'){
+        alert("Seuls les comptes administrateurs peuvent supprimer une évaluation.");
+        return;
+      }
+      const id = btn.getAttribute('data-del');
+      if (!confirm("Supprimer définitivement cette évaluation ?")) return;
+      const idx = (await safeGet('evaluations_index', true)) || [];
+      await safeSet('evaluations_index', idx.filter(r => r.id !== id), true);
+      await safeDelete('eval:' + id, true);
+      await refreshDashboard();
+    });
+  });
+  container.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!currentUser || currentUser.role !== 'admin'){
+        alert("Seuls les comptes administrateurs peuvent modifier une évaluation.");
+        return;
+      }
+      const id = btn.getAttribute('data-edit');
+      const rec = await safeGet('eval:' + id, true);
+      if (rec) loadRecordIntoForm(rec);
+    });
+  });
+}
+
+function loadRecordIntoForm(rec){
+  editingId = rec.id;
+  document.getElementById('agentInput').value = rec.agent || '';
+  document.getElementById('evaluateurInput').value = rec.evaluateur || '';
+  document.getElementById('dateInput').value = rec.date || '';
+  document.getElementById('dateAppelInput').value = rec.dateAppel || '';
+  document.getElementById('indiceInput').value = rec.indice || '';
+  document.getElementById('ecouteSelect').value = rec.ecoute || 'A chaud';
+  document.getElementById('fileSelect').value = rec.file || '803';
+  document.getElementById('demandeInput').value = rec.demande || '';
+  document.getElementById('typologieInput').value = rec.typologie || '';
+  document.getElementById('siSelect').value = rec.hasSI ? 'oui' : 'non';
+  document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+  (rec.details || []).forEach(d => {
+    const crit = CRITERIA.find(c => c.titre === d.critere);
+    if (crit && d.statut){
+      const input = document.getElementById(`${crit.id}-${d.statut}`);
+      if (input) input.checked = true;
+    }
+  });
+  computeScore();
+  document.getElementById('editBanner').style.display = 'flex';
+  document.getElementById('editBannerText').textContent = `Modification de l'évaluation de ${rec.agent} du ${rec.date || '—'}.`;
+  showView('form');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+document.getElementById('cancelEditBtn').addEventListener('click', () => {
+  editingId = null;
+  document.getElementById('editBanner').style.display = 'none';
+  document.getElementById('saveStatus').textContent = '';
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const agent = document.getElementById('agentInput').value.trim();
+  const evaluateur = document.getElementById('evaluateurInput').value.trim();
+  const status = document.getElementById('saveStatus');
+  if (!agent){
+    status.textContent = "Merci de renseigner le nom de l'agent avant d'enregistrer.";
+    status.style.color = 'var(--nonconforme)';
+    return;
+  }
+  if (!evaluateur){
+    status.textContent = "Merci de renseigner l'évaluateur avant d'enregistrer.";
+    status.style.color = 'var(--nonconforme)';
+    return;
+  }
+  const { counts, earned, possible, basePct, finalPct, hasSI } = computeScore();
+  const id = editingId || Date.now().toString();
+  const demande = document.getElementById('demandeInput').value.trim();
+  const typologie = document.getElementById('typologieInput').value.trim();
+  const record = {
+    id,
+    savedAt: editingId ? (await safeGet('eval:' + id, true))?.savedAt || Date.now() : Date.now(),
+    agent,
+    evaluateur,
+    date: document.getElementById('dateInput').value,
+    dateAppel: document.getElementById('dateAppelInput').value,
+    indice: document.getElementById('indiceInput').value.trim(),
+    ecoute: document.getElementById('ecouteSelect').value,
+    file: document.getElementById('fileSelect').value,
+    demande,
+    typologie,
+    createdBy: currentUser ? currentUser.login : null,
+    counts, earned, possible, basePct, finalPct, hasSI,
+    details: CRITERIA.map(c => ({
+      critere: c.titre,
+      statut: (document.querySelector(`input[name="${c.id}"]:checked`) || {}).value || null
+    }))
+  };
+  await safeSet('eval:' + id, record, true);
+  await saveEvaluationRemote(record);
+
+  let index = (await safeGet('evaluations_index', true)) || [];
+  index = index.filter(r => r.id !== id);
+  index.push({ id, savedAt: record.savedAt, agent, evaluateur, date: record.date, dateAppel: record.dateAppel, ecoute: record.ecoute, file: record.file, indice: record.indice, demande: record.demande, typologie: record.typologie, finalPct: record.finalPct });
+  await safeSet('evaluations_index', index, true);
+
+  await apiAddListValue('agent', agent);
+  await apiAddListValue('evaluateur', evaluateur);
+  if (demande) await apiAddListValue('demande', demande);
+  if (typologie) await apiAddListValue('typologie', typologie);
+
+  status.textContent = editingId ? 'Évaluation mise à jour.' : 'Évaluation enregistrée.';
+  status.style.color = 'var(--conforme)';
+  editingId = null;
+  document.getElementById('editBanner').style.display = 'none';
+  await refreshAllLists();
+  await refreshDashboard();
+  setTimeout(() => status.textContent = '', 3000);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  editingId = null;
+  document.getElementById('editBanner').style.display = 'none';
+  document.getElementById('agentInput').value = '';
+  document.getElementById('evaluateurInput').value = '';
+  document.getElementById('indiceInput').value = '';
+  document.getElementById('demandeInput').value = '';
+  document.getElementById('typologieInput').value = '';
+  document.getElementById('ecouteSelect').selectedIndex = 0;
+  document.getElementById('fileSelect').selectedIndex = 0;
+  document.getElementById('dateInput').valueAsDate = new Date();
+  document.getElementById('dateAppelInput').valueAsDate = new Date();
+  document.getElementById('siSelect').value = 'non';
+  document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+  computeScore();
+  document.getElementById('saveStatus').textContent = '';
+});
+
+
+// ---- Dashboard ----
+function showView(view){
+  document.getElementById('formView').style.display = view === 'form' ? 'block' : 'none';
+  document.getElementById('dashboardView').style.display = view === 'dashboard' ? 'block' : 'none';
+  document.getElementById('accountsView').style.display = view === 'accounts' ? 'block' : 'none';
+  document.getElementById('listsView').style.display = view === 'lists' ? 'block' : 'none';
+}
+document.getElementById('dashboardBtn').addEventListener('click', async () => { await refreshDashboard(); showView('dashboard'); });
+document.getElementById('backToFormBtn').addEventListener('click', () => showView('form'));
+document.getElementById('accountsBtn').addEventListener('click', async () => {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  await renderAccountsTable();
+  showView('accounts');
+});
+document.getElementById('backToFormFromAccountsBtn').addEventListener('click', () => showView('form'));
+
+async function refreshDashboard(){
+  let evals = await getAllEvaluations();
+
+  // Filtre date de début / date de fin (sur la date d'évaluation), synchronisé avec tout le tableau de bord
+  const dateStart = document.getElementById('dateStartFilter').value;
+  const dateEnd = document.getElementById('dateEndFilter').value;
+  if (dateStart) evals = evals.filter(e => e.date && e.date >= dateStart);
+  if (dateEnd) evals = evals.filter(e => e.date && e.date <= dateEnd);
+
+  // Filtre agent
+  const agentSet = [...new Set(evals.map(e => e.agent).filter(Boolean))].sort();
+  const filterSel = document.getElementById('agentFilter');
+  const currentFilter = filterSel.value;
+  filterSel.innerHTML = '<option value="">Tous les agents</option>' + agentSet.map(a => `<option value="${a}">${a}</option>`).join('');
+  filterSel.value = agentSet.includes(currentFilter) ? currentFilter : '';
+
+  // Stats globales
+  const scored = evals.filter(e => (e.finalPct !== undefined && e.finalPct !== null));
+  const globalAvg = scored.length ? scored.reduce((s,e) => s + e.finalPct, 0) / scored.length : null;
+  document.getElementById('globalScore').textContent = globalAvg !== null ? Math.round(globalAvg) + '%' : '—';
+  document.getElementById('globalCount').textContent = evals.length;
+  document.getElementById('globalAgents').textContent = agentSet.length;
+  document.getElementById('globalSI').textContent = evals.filter(e => e.hasSI).length;
+
+  // Par agent
+  const byAgent = {};
+  agentSet.forEach(a => byAgent[a] = []);
+  evals.forEach(e => { if (e.agent) (byAgent[e.agent] = byAgent[e.agent] || []).push(e); });
+
+  const agentCardsEl = document.getElementById('agentCards');
+  const agentsToShow = filterSel.value ? [filterSel.value] : agentSet;
+  if (!agentsToShow.length){
+    agentCardsEl.innerHTML = '<div class="empty-state">Aucun agent évalué pour le moment.</div>';
+  } else {
+    agentCardsEl.innerHTML = agentsToShow.map(agent => {
+      const list = byAgent[agent] || [];
+      const scoredList = list.filter(e => e.finalPct !== undefined && e.finalPct !== null);
+      const avg = scoredList.length ? scoredList.reduce((s,e) => s + e.finalPct, 0) / scoredList.length : null;
+      const sc = scoreColor(avg);
+
+      // Critères de non-conformité (nonconforme + situation inacceptable)
+      const tally = {};
+      list.forEach(e => (e.details || []).forEach(d => {
+        if (d.statut === 'nonconforme'){
+          tally[d.critere] = (tally[d.critere] || 0) + 1;
+        }
+      }));
+      const topIssues = Object.entries(tally).sort((a,b) => b[1]-a[1]).slice(0,5);
+
+      return `
+        <div class="agent-card">
+          <div class="agent-card-head">
+            <h3>${agent}</h3>
+            <span class="agent-score" style="color:${sc.color}; background:${sc.bg}">${avg !== null ? Math.round(avg)+'%' : '—'}</span>
+          </div>
+          <div class="agent-meta">${list.length} évaluation${list.length>1?'s':''}${list.filter(e=>e.hasSI).length ? ' · ' + list.filter(e=>e.hasSI).length + ' situation(s) inacceptable(s)' : ''}</div>
+          ${topIssues.length ? `<div class="noncomp-list">${topIssues.map(([crit,n]) => `<span class="noncomp-tag">${crit} (${n})</span>`).join('')}</div>` : '<div class="noncomp-list"><span class="agent-meta">Aucune non-conformité relevée</span></div>'}
+        </div>`;
+    }).join('');
+  }
+
+  const filtered = filterSel.value ? evals.filter(e => e.agent === filterSel.value) : evals;
+  renderHistoryTable(filtered);
+}
+document.getElementById('agentFilter').addEventListener('change', refreshDashboard);
+document.getElementById('dateStartFilter').addEventListener('change', refreshDashboard);
+document.getElementById('dateEndFilter').addEventListener('change', refreshDashboard);
+document.getElementById('clearDateFilterBtn').addEventListener('click', () => {
+  document.getElementById('dateStartFilter').value = '';
+  document.getElementById('dateEndFilter').value = '';
+  refreshDashboard();
+});
+
+// ---- Gestion des comptes (admin) ----
+function genPassword(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let p = '';
+  for (let i = 0; i < 10; i++) p += chars[Math.floor(Math.random()*chars.length)];
+  return p;
+}
+
+let editingPwdLogin = null;
+
+async function renderAccountsTable(){
+  const container = document.getElementById('accountsContainer');
+  const adminCount = ACCOUNTS.filter(a => a.role === 'admin').length;
+  container.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Identifiant</th><th>Nom affiché</th><th>Mot de passe</th><th>Rôle</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${ACCOUNTS.map(acc => `
+          <tr>
+            <td>${acc.login}</td>
+            <td>${acc.name}</td>
+            <td style="font-family:'IBM Plex Mono', monospace;">
+              ${editingPwdLogin === acc.login ? `
+                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                  <input type="text" id="pwdEditField" value="${acc.password}" style="width:130px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; font-family:'IBM Plex Mono', monospace; font-size:12.5px;">
+                  <button class="btn-primary btn-small" data-save-pwd="${acc.login}">Enregistrer</button>
+                  <button class="btn-ghost btn-small" data-gen-pwd="${acc.login}">Générer</button>
+                  <button class="btn-ghost btn-small" data-cancel-pwd="${acc.login}">Annuler</button>
+                </div>
+              ` : acc.password}
+            </td>
+            <td><span class="acc-role-badge ${acc.role === 'admin' ? 'acc-role-admin' : 'acc-role-user'}">${acc.role === 'admin' ? 'Admin' : 'Utilisateur'}</span></td>
+            <td class="row-actions">
+              ${editingPwdLogin === acc.login ? '' : `<button class="btn-ghost btn-small" data-edit-pwd="${acc.login}">Modifier le mot de passe</button>`}
+              <button class="btn-ghost btn-small" data-toggle-role="${acc.login}">${acc.role === 'admin' ? 'Rétrograder' : 'Promouvoir admin'}</button>
+              <button class="btn-danger btn-small" data-del-acc="${acc.login}" ${(acc.role === 'admin' && adminCount <= 1) ? 'disabled title="Impossible de supprimer le dernier compte administrateur"' : ''}>Supprimer</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  container.querySelectorAll('[data-edit-pwd]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      editingPwdLogin = btn.getAttribute('data-edit-pwd');
+      await renderAccountsTable();
+      const field = document.getElementById('pwdEditField');
+      if (field){ field.focus(); field.select(); }
+    });
+  });
+
+  container.querySelectorAll('[data-gen-pwd]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const field = document.getElementById('pwdEditField');
+      if (field) field.value = genPassword();
+    });
+  });
+
+  container.querySelectorAll('[data-cancel-pwd]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      editingPwdLogin = null;
+      await renderAccountsTable();
+    });
+  });
+
+  container.querySelectorAll('[data-save-pwd]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const login = btn.getAttribute('data-save-pwd');
+      const acc = ACCOUNTS.find(a => a.login === login);
+      const field = document.getElementById('pwdEditField');
+      if (!acc || !field) return;
+      const newPwd = field.value.trim();
+      if (!newPwd){
+        field.style.borderColor = 'var(--nonconforme)';
+        field.focus();
+        return;
+      }
+      acc.password = newPwd;
+      await saveAccounts();
+      if (currentUser && currentUser.login === acc.login) currentUser = acc;
+      editingPwdLogin = null;
+      await renderAccountsTable();
+    });
+  });
+
+  container.querySelectorAll('[data-toggle-role]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const login = btn.getAttribute('data-toggle-role');
+      const acc = ACCOUNTS.find(a => a.login === login);
+      if (!acc) return;
+      if (acc.role === 'admin' && ACCOUNTS.filter(a => a.role === 'admin').length <= 1){
+        alert("Impossible de rétrograder le dernier compte administrateur.");
+        return;
+      }
+      const nextRole = acc.role === 'admin' ? 'user' : 'admin';
+      if (!confirm(`Changer le rôle de ${acc.login} en "${nextRole === 'admin' ? 'Administrateur' : 'Utilisateur'}" ?`)) return;
+      acc.role = nextRole;
+      await saveAccounts();
+      if (currentUser && currentUser.login === acc.login) currentUser = acc;
+      await renderAccountsTable();
+    });
+  });
+
+  container.querySelectorAll('[data-del-acc]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const login = btn.getAttribute('data-del-acc');
+      const acc = ACCOUNTS.find(a => a.login === login);
+      if (!acc) return;
+      if (acc.role === 'admin' && ACCOUNTS.filter(a => a.role === 'admin').length <= 1){
+        alert("Impossible de supprimer le dernier compte administrateur.");
+        return;
+      }
+      if (currentUser && currentUser.login === acc.login){
+        alert("Impossible de supprimer le compte avec lequel vous êtes actuellement connecté.");
+        return;
+      }
+      if (!confirm(`Supprimer définitivement le compte "${acc.login}" ?`)) return;
+      ACCOUNTS = ACCOUNTS.filter(a => a.login !== acc.login);
+      await saveAccounts();
+      await renderAccountsTable();
+    });
+  });
+}
+
+document.getElementById('addAccountBtn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('accountStatus');
+  const login = document.getElementById('newAccLogin').value.trim();
+  const name = document.getElementById('newAccName').value.trim() || login;
+  let password = document.getElementById('newAccPassword').value.trim();
+  const role = document.getElementById('newAccRole').value;
+
+  if (!login){
+    statusEl.textContent = "Merci de renseigner un identifiant.";
+    statusEl.style.color = 'var(--nonconforme)';
+    return;
+  }
+  if (ACCOUNTS.some(a => a.login.toLowerCase() === login.toLowerCase())){
+    statusEl.textContent = "Cet identifiant existe déjà.";
+    statusEl.style.color = 'var(--nonconforme)';
+    return;
+  }
+  const generated = !password;
+  if (!password) password = genPassword();
+
+  ACCOUNTS.push({ login, name, password, role });
+  await saveAccounts();
+
+  document.getElementById('newAccLogin').value = '';
+  document.getElementById('newAccName').value = '';
+  document.getElementById('newAccPassword').value = '';
+  document.getElementById('newAccRole').selectedIndex = 0;
+
+  statusEl.style.color = 'var(--conforme)';
+  statusEl.textContent = generated ? `Compte créé. Mot de passe généré : ${password}` : 'Compte créé.';
+  await renderAccountsTable();
+});
+
+// ---- Gestion des listes déroulantes (admin) : Agents, Évaluateurs, Demandes, Typologies ----
+const LIST_CATEGORIES = [
+  { key: 'agent', label: 'Agents' },
+  { key: 'evaluateur', label: 'Évaluateurs' },
+  { key: 'demande', label: 'Demandes client' },
+  { key: 'typologie', label: "Typologies d'appel" }
+];
+
+let editingListValue = null; // { categorie, valeur }
+
+function escapeHtml_(s){
+  return String(s).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+}
+
+async function renderListsView(){
+  const container = document.getElementById('listsContainer');
+  container.innerHTML = '<div class="empty-state">Chargement…</div>';
+  const lists = await apiGetLists();
+
+  container.innerHTML = LIST_CATEGORIES.map(cat => {
+    const values = lists[cat.key] || [];
+    const isEditingHere = v => editingListValue && editingListValue.categorie === cat.key && editingListValue.valeur === v;
+    return `
+      <div class="card" style="margin-bottom:18px;">
+        <div class="dash-controls" style="margin:0 0 14px;">
+          <h2>${cat.label}</h2>
+        </div>
+        <div class="actions" style="margin-top:0; margin-bottom:6px; align-items:flex-start;">
+          <textarea id="newval-${cat.key}" placeholder="Ajouter une ou plusieurs valeurs… (une par ligne, ou séparées par des virgules)" rows="2" style="flex:1; min-width:200px; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-family:'Inter',sans-serif; font-size:14px; resize:vertical;"></textarea>
+          <button class="btn-primary btn-small" data-add-val="${cat.key}" style="align-self:flex-start;">Ajouter</button>
+        </div>
+        <div class="save-status" id="addStatus-${cat.key}" style="margin:0 0 14px; min-height:16px;"></div>
+        ${values.length ? `
+          <table>
+            <thead><tr><th>Valeur</th><th></th></tr></thead>
+            <tbody>
+              ${values.map(v => `
+                <tr>
+                  <td>
+                    ${isEditingHere(v) ? `<input type="text" id="renameField-${cat.key}" value="${escapeHtml_(v)}" style="width:220px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; font-size:13.5px;">` : escapeHtml_(v)}
+                  </td>
+                  <td class="row-actions">
+                    ${isEditingHere(v) ? `
+                      <button class="btn-primary btn-small" data-save-rename="${cat.key}" data-old="${escapeHtml_(v)}">Enregistrer</button>
+                      <button class="btn-ghost btn-small" data-cancel-rename="1">Annuler</button>
+                    ` : `
+                      <button class="btn-ghost btn-small" data-rename="${cat.key}" data-val="${escapeHtml_(v)}">Renommer</button>
+                      <button class="btn-danger btn-small" data-del-val="${cat.key}" data-val2="${escapeHtml_(v)}">Supprimer</button>
+                    `}
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        ` : '<div class="empty-state">Aucune valeur enregistrée.</div>'}
+      </div>`;
+  }).join('');
+
+  container.querySelectorAll('[data-add-val]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cat = btn.getAttribute('data-add-val');
+      const field = document.getElementById(`newval-${cat}`);
+      const statusEl = document.getElementById(`addStatus-${cat}`);
+      const raw = field.value;
+      // Découpe sur retours à la ligne ET virgules, nettoie, déduplique (insensible à la casse)
+      const seen = new Set();
+      const newValues = raw
+        .split(/[\n,;]+/)
+        .map(v => v.trim())
+        .filter(v => v.length > 0)
+        .filter(v => {
+          const k = v.toLowerCase();
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+      if (!newValues.length) return;
+
+      btn.disabled = true;
+      let ok = 0, fail = 0;
+      for (let i = 0; i < newValues.length; i++){
+        if (statusEl) statusEl.textContent = `Ajout en cours… (${i + 1}/${newValues.length})`;
+        try {
+          const res = await apiAddListValue(cat, newValues[i]);
+          if (res) ok++; else fail++;
+        } catch (e) {
+          fail++;
+        }
+      }
+      btn.disabled = false;
+      field.value = '';
+      if (statusEl) {
+        statusEl.textContent = fail
+          ? `${ok} valeur(s) ajoutée(s), ${fail} échec(s).`
+          : `${ok} valeur(s) ajoutée(s).`;
+      }
+      await renderListsView();
+      await refreshAllLists();
+    });
+  });
+
+  container.querySelectorAll('[data-rename]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      editingListValue = { categorie: btn.getAttribute('data-rename'), valeur: btn.getAttribute('data-val') };
+      await renderListsView();
+      const field = document.getElementById(`renameField-${editingListValue.categorie}`);
+      if (field){ field.focus(); field.select(); }
+    });
+  });
+
+  container.querySelectorAll('[data-cancel-rename]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      editingListValue = null;
+      await renderListsView();
+    });
+  });
+
+  container.querySelectorAll('[data-save-rename]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cat = btn.getAttribute('data-save-rename');
+      const oldVal = btn.getAttribute('data-old');
+      const field = document.getElementById(`renameField-${cat}`);
+      const newVal = field ? field.value.trim() : '';
+      if (!newVal) return;
+      if (newVal !== oldVal){
+        await apiRenameListValue(cat, oldVal, newVal);
+      }
+      editingListValue = null;
+      await renderListsView();
+      await refreshAllLists();
+    });
+  });
+
+  container.querySelectorAll('[data-del-val]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cat = btn.getAttribute('data-del-val');
+      const val = btn.getAttribute('data-val2');
+      if (!confirm(`Supprimer "${val}" de la liste ? Les évaluations déjà enregistrées garderont ce libellé.`)) return;
+      await apiDeleteListValue(cat, val);
+      await renderListsView();
+      await refreshAllLists();
+    });
+  });
+}
+
+document.getElementById('listsBtn').addEventListener('click', async () => {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  editingListValue = null;
+  await renderListsView();
+  showView('lists');
+});
+document.getElementById('backToFormFromListsBtn').addEventListener('click', () => showView('form'));
+
+function csvEscape(val){
+  const s = (val === null || val === undefined) ? '' : String(val);
+  if (/[",;\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+async function exportEvaluationsCSV(){
+  let evals = await getAllEvaluations();
+
+  const dateStart = document.getElementById('dateStartFilter').value;
+  const dateEnd = document.getElementById('dateEndFilter').value;
+  if (dateStart) evals = evals.filter(e => e.date && e.date >= dateStart);
+  if (dateEnd) evals = evals.filter(e => e.date && e.date <= dateEnd);
+
+  if (!evals.length){
+    alert("Aucune évaluation à exporter pour la plage de dates sélectionnée.");
+    return;
+  }
+  const critHeaders = CRITERIA.map(c => c.titre);
+  const headers = [
+    "Date", "Date d'appel", "Agent", "Évaluateur", "File", "Type d'écoute", "Indice",
+    "Demande client", "Typologie d'appel",
+    "Note (%)", "Points obtenus", "Points possibles", "Pénalité SI appliquée",
+    "Saisi par", ...critHeaders
+  ];
+  const rows = evals.map(e => {
+    const detailsByCrit = {};
+    (e.details || []).forEach(d => { detailsByCrit[d.critere] = d.statut || ''; });
+    return [
+      e.date || '', e.dateAppel || '', e.agent || '', e.evaluateur || '', e.file || '', e.ecoute || '', e.indice || '',
+      e.demande || '', e.typologie || '',
+      (e.finalPct !== undefined && e.finalPct !== null) ? Math.round(e.finalPct) : '',
+      (e.earned !== undefined) ? e.earned.toFixed(1) : '',
+      (e.possible !== undefined) ? e.possible.toFixed(1) : '',
+      e.hasSI ? 'Oui' : 'Non',
+      e.createdBy || '',
+      ...critHeaders.map(h => detailsByCrit[h] || '')
+    ];
+  });
+  const csvLines = [headers, ...rows].map(r => r.map(csvEscape).join(';'));
+  const csvContent = '\uFEFF' + csvLines.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const rangeSuffix = (dateStart || dateEnd) ? `_${dateStart || 'debut'}_a_${dateEnd || 'fin'}` : `_${new Date().toISOString().slice(0,10)}`;
+  a.download = `evaluations_qualite${rangeSuffix}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+document.getElementById('exportCsvBtn').addEventListener('click', exportEvaluationsCSV);
+
+refreshAllLists();
+restoreSession();
+</script>
+</body>
+</html>
