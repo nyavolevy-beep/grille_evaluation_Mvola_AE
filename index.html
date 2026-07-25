@@ -810,7 +810,17 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     }))
   };
   await safeSet('eval:' + id, record, true);
-
+  
+await fetch(API_URL, {
+method: "POST",
+headers: {
+"Content-Type": "application/json"
+},
+body: JSON.stringify({
+action: "saveEvaluation",
+evaluation: record
+})
+});
   let index = (await safeGet('evaluations_index', true)) || [];
   index = index.filter(r => r.id !== id);
   index.push({ id, savedAt: record.savedAt, agent, evaluateur, date: record.date, dateAppel: record.dateAppel, ecoute: record.ecoute, file: record.file, indice: record.indice, demande: record.demande, typologie: record.typologie, finalPct: record.finalPct });
