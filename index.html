@@ -606,7 +606,8 @@ function hasCloudStorage(){
 }
 function lsKey(key, shared){ return `geq_${shared ? 'shared' : 'personal'}_${key}`; }
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbzD0xgMl1dk2OOdugYtd7aFeN_dWOhkfsBcGZDZu5EaRI0zv6Y2oQYtBlX8RnoXXPz5fA/exec";
+  const API_URL = 
+"https://script.google.com/macros/s/AKfycbzD0xgMl1dk2OOdugYtd7aFeN_dWOhkfsBcGZDZu5EaRI0zv6Y2oQYtBlX8RnoXXPz5fA/exec";
 async function safeGet(key) {
 const response = await fetch(
 `${API_URL}?key=${encodeURIComponent(key)}`
