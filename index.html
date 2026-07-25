@@ -606,28 +606,42 @@ function hasCloudStorage(){
 }
 function lsKey(key, shared){ return `geq_${shared ? 'shared' : 'personal'}_${key}`; }
 
-async function safeGet(key, shared){
-  if (hasCloudStorage()){
-    try { const r = await window.storage.get(key, !!shared); return r ? JSON.parse(r.value) : null; }
-    catch(e){ /* bascule vers localStorage ci-dessous */ }
-  }
-  try { const raw = localStorage.getItem(lsKey(key, shared)); return raw !== null ? JSON.parse(raw) : null; }
-  catch(e){ return null; }
+  const API_URL = "https://script.google.com/macros/s/AKfycbzD0xgMl1dk2OOdugYtd7aFeN_dWOhkfsBcGZDZu5EaRI0zv6Y2oQYtBlX8RnoXXPz5fA/exec";
+async function safeGet(key) {
+const response = await fetch(
+`${API_URL}?key=${encodeURIComponent(key)}`
+);
+if (!response.ok) {
+return null;
 }
-async function safeSet(key, value, shared){
-  if (hasCloudStorage()){
-    try { await window.storage.set(key, JSON.stringify(value), !!shared); return; }
-    catch(e){ /* bascule vers localStorage ci-dessous */ }
-  }
-  try { localStorage.setItem(lsKey(key, shared), JSON.stringify(value)); }
-  catch(e){ console.error('Storage error', e); }
+return await response.json();
 }
-async function safeDelete(key, shared){
-  if (hasCloudStorage()){
-    try { await window.storage.delete(key, !!shared); return; }
-    catch(e){ /* bascule vers localStorage ci-dessous */ }
-  }
-  try { localStorage.removeItem(lsKey(key, shared)); } catch(e){}
+async function safeSet(key, value) {
+const response = await fetch(API_URL, {
+method: "POST",
+headers: {
+"Content-Type": "application/json"
+},
+body: JSON.stringify({
+action: "save",
+key: key,
+value: value
+})
+});
+return await response.json();
+}
+async function safeDelete(key) {
+const response = await fetch(API_URL, {
+method: "POST",
+headers: {
+"Content-Type": "application/json"
+},
+body: JSON.stringify({
+action: "delete",
+key: key
+})
+});
+return await response.json();
 }
 
 async function refreshAgentsList(){
